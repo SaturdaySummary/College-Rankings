@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Sports Central | Official Rankings & Game Previews</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for visual rank movement history -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Teko:wght@600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            fbBlue: '#0284C7',
+                            fbBlueHover: '#0369A1',
+                            bbOrange: '#FF6B00',
+                            bbOrangeHover: '#E05E00',
+                            darkBg: '#0B0F17',
+                            cardBg: '#151C2C',
+                            border: '#2A364F',
+                            textMuted: '#94A3B8'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        teko: ['Teko', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0B0F17;
+            color: #F8FAFC;
+            font-family: 'Inter', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0F17;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2A364F;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3B4D6C;
+        }
+        .glow-fb {
+            box-shadow: 0 0 25px rgba(2, 132, 199, 0.3);
+        }
+        .glow-bb {
+            box-shadow: 0 0 25px rgba(255, 107, 0, 0.3);
+        }
+        .modal-blur {
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-brand-fbBlue selection:text-white">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="sticky top-0 z-40 bg-brand-darkBg/95 backdrop-blur border-b border-brand-border px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <!-- Brand Logo & Title -->
+            <div class="flex items-center gap-3">
+                <div id="sportBadgeIcon" class="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-600 to-blue-400 flex items-center justify-center text-white font-black text-2xl shadow-lg glow-fb transition-all duration-300">
+                    <i id="sportIcon" class="fa-solid fa-football"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight text-white font-teko uppercase text-2xl leading-none flex items-center gap-2">
+                        COLLEGE SPORTS <span id="sportTitleAccent" class="text-brand-fbBlue transition-colors duration-300">CENTRAL</span>
+                    </h1>
+                    <p class="text-xs text-brand-textMuted tracking-wider font-medium">Rankings • Analysis • Game Previews</p>
+                </div>
+            </div>
+
+            <!-- Sport Sector Switcher (Football vs Basketball) -->
+            <div class="bg-brand-cardBg border border-brand-border p-1 rounded-xl flex items-center gap-1 shadow-inner">
+                <button id="btnFootball" onclick="switchSport('football')" class="px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-2 bg-brand-fbBlue text-white shadow-md glow-fb">
+                    <i class="fa-solid fa-football"></i> College Football
+                </button>
+                <button id="btnBasketball" onclick="switchSport('basketball')" class="px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-2 text-brand-textMuted hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-basketball"></i> College Basketball
+                </button>
+            </div>
+
+            <!-- YouTube Channel Direct Link Button -->
+            <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-md hover:scale-105 active:scale-95">
+                <i class="fa-brands fa-youtube text-base"></i>
+                <span>Subscribe on YouTube</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- SUB-NAVIGATION BAR (SPORTS SECTOR SPECIFIC) -->
+    <nav class="bg-brand-cardBg/60 border-b border-brand-border px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            
+            <!-- Dynamic Category Sub-Tabs -->
+            <div id="subTabsContainer" class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto scrollbar-none">
+                <!-- Sub tabs loaded dynamically via JS -->
+            </div>
+
+            <!-- Search & Share Quick Controls -->
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <div class="relative flex-1 sm:w-60">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-brand-textMuted text-xs"></i>
+                    <input type="text" id="searchInput" placeholder="Search team or conference..." 
+                           class="w-full bg-brand-darkBg border border-brand-border rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-brand-textMuted focus:outline-none focus:border-brand-fbBlue transition-colors">
+                </div>
+                <button onclick="shareSummary()" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 border border-brand-border transition-all">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span class="hidden md:inline">Share</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 w-full flex-grow space-y-6">
+
+        <!-- VIEW 1: TOP 25 RANKINGS (SHARED FB & BB) -->
+        <section id="viewTop25" class="space-y-4">
+            
+            <!-- Controls Bar: Week Selector & Conference Filter -->
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-brand-cardBg p-4 rounded-xl border border-brand-border shadow-lg">
+                <div class="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-none">
+                    <span class="text-xs font-bold text-brand-textMuted uppercase tracking-wider mr-1">Poll Week:</span>
+                    <div id="weekTabsContainer" class="flex items-center gap-2">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-brand-textMuted uppercase tracking-wider">Conference:</span>
+                    <select id="confFilter" class="bg-brand-darkBg border border-brand-border text-xs rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-brand-fbBlue">
+                        <option value="ALL">All Conferences</option>
+                        <option value="SEC">SEC</option>
+                        <option value="Big Ten">Big Ten</option>
+                        <option value="Big 12">Big 12</option>
+                        <option value="ACC">ACC</option>
+                        <option value="Pac-12">Pac-12 / G5</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Poll Header Info -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-1">
+                <div>
+                    <h2 id="currentWeekTitle" class="text-xl font-bold text-white flex items-center gap-2">
+                        College Football Top 25 Poll - Week 8
+                    </h2>
+                    <p id="currentWeekDate" class="text-xs text-brand-textMuted">Updated Weekly • Official Community Power Rankings</p>
+                </div>
+                <div class="text-xs text-brand-textMuted flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-brand-fbBlue"></i> Click any team row for full rank trajectory & notes.
+                </div>
+            </div>
+
+            <!-- Rankings Table -->
+            <div class="bg-brand-cardBg border border-brand-border rounded-xl overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900/90 border-b border-brand-border text-brand-textMuted text-xs font-bold uppercase tracking-wider">
+                                <th class="py-3 px-4 text-center w-16">Rank</th>
+                                <th class="py-3 px-4 w-12 text-center">Logo</th>
+                                <th class="py-3 px-4">Team</th>
+                                <th class="py-3 px-4 hidden sm:table-cell">Conference</th>
+                                <th class="py-3 px-4 text-center">Record</th>
+                                <th class="py-3 px-4 text-center">Trend</th>
+                                <th class="py-3 px-4 hidden md:table-cell">Analysis Rationale</th>
+                                <th class="py-3 px-4 text-center w-10"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="rankingsTableBody" class="divide-y divide-brand-border text-sm">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="emptyState" class="hidden py-12 text-center text-brand-textMuted">
+                    <i class="fa-solid fa-shield-halved text-4xl mb-3 text-slate-600"></i>
+                    <p class="text-base font-semibold">No teams found matching your query</p>
+                    <p class="text-xs mt-1">Try resetting search parameters or conference filter.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: FOOTBALL CONFERENCE POWER RANKINGS -->
+        <section id="viewConfPower" class="hidden space-y-6">
+            <div class="bg-brand-cardBg p-6 rounded-xl border border-brand-border shadow-lg space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-brand-border pb-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-white uppercase font-teko tracking-wide text-3xl">Conference Power Rankings</h2>
+                        <p class="text-xs text-brand-textMuted">Tier-by-tier breakdown of each major conference in College Football.</p>
+                    </div>
+                    <!-- Conference Switch Tabs -->
+                    <div id="confPowerTabs" class="flex items-center gap-2 overflow-x-auto scrollbar-none w-full md:w-auto">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- Active Conference Teams Power Grid -->
+                <div id="confPowerContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <!-- Cards loaded dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: FOOTBALL TOP 10 GAMES OF THE WEEK -->
+        <section id="viewTopGames" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                    <h2 class="text-2xl font-black text-white uppercase font-teko tracking-wide text-3xl">Top 10 Games of the Week</h2>
+                    <p class="text-xs text-brand-textMuted">Must-watch matchups, betting spreads, and key tactical analysis.</p>
+                </div>
+                <span class="px-3 py-1 bg-brand-fbBlue/20 text-brand-fbBlue border border-brand-fbBlue/30 text-xs font-bold rounded-lg uppercase">Week 8 Featured Slate</span>
+            </div>
+
+            <!-- Games Grid -->
+            <div id="gamesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Game cards dynamically loaded -->
+            </div>
+        </section>
+
+        <!-- YOUTUBE CREATOR HUB PROMO BANNER -->
+        <section class="bg-gradient-to-r from-red-950/60 via-brand-cardBg to-slate-900 border border-red-500/30 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 opacity-10 text-red-600 text-9xl pointer-events-none">
+                <i class="fa-brands fa-youtube"></i>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
+                <div class="flex items-center gap-5">
+                    <div class="w-20 h-20 rounded-2xl bg-red-600/20 border border-red-500/40 flex items-center justify-center text-red-500 text-4xl shrink-0 shadow-lg">
+                        <i class="fa-solid fa-play"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-red-400 uppercase tracking-widest bg-red-950/80 px-2 py-0.5 rounded border border-red-800">Official Channel</span>
+                            <span class="text-xs text-brand-textMuted"><i class="fa-solid fa-users text-red-400 mr-1"></i> 25K+ Subscribers</span>
+                        </div>
+                        <h3 class="text-2xl font-black text-white mt-1">Watch Weekly Breakdown Videos!</h3>
+                        <p class="text-xs text-slate-300 max-w-xl mt-1 leading-relaxed">
+                            Catch deep-dive film study, react to poll drops, and debate top 25 rankings live every week on our official YouTube Channel!
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                    <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto text-center bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm px-6 py-3 rounded-xl transition-all shadow-lg hover:shadow-red-600/30 active:scale-95 flex items-center justify-center gap-2">
+                        <i class="fa-brands fa-youtube text-lg"></i> Subscribe Now
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- TEAM DETAIL MODAL WITH CHART.JS -->
+    <div id="teamModal" class="fixed inset-0 z-50 hidden modal-blur bg-black/70 flex justify-end transition-opacity">
+        <div class="w-full max-w-lg bg-brand-cardBg border-l border-brand-border h-full flex flex-col shadow-2xl overflow-y-auto">
+            
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-brand-border bg-slate-900/80 flex items-center justify-between sticky top-0 z-10">
+                <div class="flex items-center gap-4">
+                    <img id="modalLogo" src="" alt="" class="w-14 h-14 object-contain bg-slate-800 p-2 rounded-xl border border-brand-border">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span id="modalRank" class="text-xs font-black px-2.5 py-0.5 rounded text-white bg-brand-fbBlue">#1</span>
+                            <span id="modalConf" class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-800 text-brand-textMuted border border-brand-border">SEC</span>
+                        </div>
+                        <h3 id="modalTeamName" class="text-xl font-black text-white mt-1">Team Name</h3>
+                        <p id="modalRecord" class="text-xs text-brand-textMuted">Record: 7-0</p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="text-brand-textMuted hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 space-y-6 flex-grow">
+                
+                <!-- Rank Progression Chart -->
+                <div class="bg-slate-900/70 p-4 rounded-xl border border-brand-border">
+                    <h4 class="text-xs font-bold text-brand-textMuted uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-brand-fbBlue" id="modalChartIcon"></i> Ranking History Movement
+                    </h4>
+                    <div class="h-44 w-full">
+                        <canvas id="rankChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Analysis Rationale -->
+                <div class="space-y-2">
+                    <h4 class="text-xs font-bold text-brand-textMuted uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-quote-left text-brand-fbBlue" id="modalQuoteIcon"></i> Rationale & Key Takeaways
+                    </h4>
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-brand-border text-xs leading-relaxed text-slate-200 font-normal" id="modalRationale">
+                        Detailed breakdown text...
+                    </div>
+                </div>
+
+                <!-- Quick Metrics -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-900/50 p-3 rounded-xl border border-brand-border text-center">
+                        <span class="text-xs text-brand-textMuted block">Peak Rank</span>
+                        <span id="modalHighRank" class="text-lg font-bold text-white">#1</span>
+                    </div>
+                    <div class="bg-slate-900/50 p-3 rounded-xl border border-brand-border text-center">
+                        <span class="text-xs text-brand-textMuted block">Trend Status</span>
+                        <span id="modalTrendBadge" class="text-sm font-bold">Unchanged</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-brand-border bg-slate-900/80 flex justify-end">
+                <button onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs px-4 py-2 rounded-lg transition-colors">
+                    Close Details
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-brand-fbBlue text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i class="fa-solid fa-circle-check text-lg"></i>
+        <span id="toastMessage" class="text-sm font-medium">Copied summary to clipboard!</span>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-brand-border bg-brand-darkBg py-6 px-4 text-center text-xs text-brand-textMuted">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <p>© 2026 College Sports Central • All Rights Reserved.</p>
+            <div class="flex items-center gap-4">
+                <a href="https://www.youtube.com" target="_blank" class="hover:text-red-500 transition-colors"><i class="fa-brands fa-youtube text-base"></i> YouTube</a>
+                <a href="#" class="hover:text-sky-400 transition-colors"><i class="fa-brands fa-x-twitter text-base"></i> Twitter / X</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        /* ==========================================================================
+           DATA STRUCTURES (FOOTBALL & BASKETBALL)
+           ========================================================================== */
+
+        const sportsData = {
+            football: {
+                title: "College Football",
+                icon: "fa-football",
+                accentColor: "#0284C7",
+                subTabs: [
+                    { id: "top25", label: "Top 25 Rankings", icon: "fa-list-ol" },
+                    { id: "confPower", label: "Conf Power Rankings", icon: "fa-sitemap" },
+                    { id: "topGames", label: "Top 10 Games of Week", icon: "fa-tv" }
+                ],
+                weeks: {
+                    "Week 8": {
+                        date: "Oct 20, 2026",
+                        teams: [
+                            { rank: 1, name: "Georgia", conf: "SEC", record: "7-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", trend: "SAME", change: 0, notes: "Suffocating defensive performance in major SEC road win." },
+                            { rank: 2, name: "Ohio State", conf: "Big Ten", record: "7-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png", trend: "SAME", change: 0, notes: "Offense clicking on all cylinders with 45+ points again." },
+                            { rank: 3, name: "Texas", conf: "SEC", record: "6-1", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png", trend: "UP", change: 1, notes: "Statement victory over top-10 opponent solidifies playoff spot." },
+                            { rank: 4, name: "Oregon", conf: "Big Ten", record: "7-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png", trend: "UP", change: 1, notes: "High-octane passing game tearing through Big Ten defenses." },
+                            { rank: 5, name: "Penn State", conf: "Big Ten", record: "6-1", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png", trend: "DOWN", change: -2, notes: "Narrow overtime defeat drops them two spots." },
+                            { rank: 6, name: "Alabama", conf: "SEC", record: "6-1", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png", trend: "SAME", change: 0, notes: "Dominant second half run game puts away rival." },
+                            { rank: 7, name: "Miami (FL)", conf: "ACC", record: "7-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png", trend: "UP", change: 2, notes: "Unbeaten frontrunner for the ACC Championship." },
+                            { rank: 8, name: "Ole Miss", conf: "SEC", record: "6-1", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png", trend: "SAME", change: 0, notes: "Explosive tempo offense produces 500+ yards." },
+                            { rank: 9, name: "Iowa State", conf: "Big 12", record: "7-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png", trend: "UP", change: 3, notes: "Top-ranked Big 12 squad following fourth-quarter comeback." },
+                            { rank: 10, name: "Clemson", conf: "ACC", record: "6-1", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/228.png", trend: "DOWN", change: -3, notes: "Costly turnovers force a dip down the rankings." }
+                        ]
+                    },
+                    "Week 7": {
+                        date: "Oct 13, 2026",
+                        teams: [
+                            { rank: 1, name: "Georgia", conf: "SEC", record: "6-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", trend: "SAME", change: 0, notes: "Unanimous #1 with dominant conference record." },
+                            { rank: 2, name: "Ohio State", conf: "Big Ten", record: "6-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png", trend: "SAME", change: 0, notes: "Shutout win reinforces defense as elite." },
+                            { rank: 3, name: "Penn State", conf: "Big Ten", record: "6-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png", trend: "UP", change: 1, notes: "Climbed up after tough physical road win." },
+                            { rank: 4, name: "Texas", conf: "SEC", record: "5-1", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png", trend: "DOWN", change: -1, notes: "Minor stumble but remains firmly in top 4." },
+                            { rank: 5, name: "Oregon", conf: "Big Ten", record: "6-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png", trend: "SAME", change: 0, notes: "Smooth sailing through conference slate." }
+                        ]
+                    }
+                },
+                confPower: {
+                    "SEC": [
+                        { rank: 1, name: "Georgia", record: "7-0", note: "Tier 1: National title favorite with zero structural weaknesses." },
+                        { rank: 2, name: "Texas", record: "6-1", note: "Tier 1: Dynamic offense, explosive playmaker depth." },
+                        { rank: 3, name: "Alabama", record: "6-1", note: "Tier 2: Elite secondary play, strong ground game." },
+                        { rank: 4, name: "Ole Miss", record: "6-1", note: "Tier 2: Up-tempo offense causes major tactical headaches." }
+                    ],
+                    "Big Ten": [
+                        { rank: 1, name: "Ohio State", record: "7-0", note: "Tier 1: Best defensive line in the nation." },
+                        { rank: 2, name: "Oregon", record: "7-0", note: "Tier 1: Quarterback playing at Heisman candidate level." },
+                        { rank: 3, name: "Penn State", record: "6-1", note: "Tier 2: Brutal ground game and suffocating linebackers." }
+                    ],
+                    "Big 12": [
+                        { rank: 1, name: "Iowa State", record: "7-0", note: "Tier 1: Outstanding fourth-quarter execution and coaching." },
+                        { rank: 2, name: "BYU", record: "7-0", note: "Tier 1: Physical defense forcing high turnover margin." },
+                        { rank: 3, name: "Kansas State", record: "6-1", note: "Tier 2: Heavy run-first scheme grinding out wins." }
+                    ],
+                    "ACC": [
+                        { rank: 1, name: "Miami (FL)", record: "7-0", note: "Tier 1: Highest scoring offense in the ACC." },
+                        { rank: 2, name: "Clemson", record: "6-1", note: "Tier 1: Top-10 defense keeping games within reach." },
+                        { rank: 3, name: "SMU", record: "6-1", note: "Tier 2: Dark horse conference contender playing fast." }
+                    ]
+                },
+                games: [
+                    {
+                        matchup: "#1 Georgia vs #3 Texas",
+                        date: "Saturday, 3:30 PM ET",
+                        tv: "ABC / ESPN+",
+                        location: "Sanford Stadium (Athens, GA)",
+                        spread: "UGA -3.5",
+                        predScore: "27 - 24 UGA",
+                        homeLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png",
+                        awayLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png",
+                        highlight: "Game of the Year implications! Can Texas handle Sanford Stadium's crowd noise?"
+                    },
+                    {
+                        matchup: "#2 Ohio State vs #5 Penn State",
+                        date: "Saturday, 12:00 PM ET",
+                        tv: "FOX Big Noon",
+                        location: "Beaver Stadium (State College, PA)",
+                        spread: "OSU -4.5",
+                        predScore: "24 - 20 OSU",
+                        homeLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png",
+                        awayLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png",
+                        highlight: "White Out Atmosphere! Penn State defense looks to stop Buckeye big plays."
+                    },
+                    {
+                        matchup: "#7 Miami (FL) vs #10 Clemson",
+                        date: "Saturday, 7:30 PM ET",
+                        tv: "ABC Primetime",
+                        location: "Hard Rock Stadium (Miami, FL)",
+                        spread: "MIA -2.5",
+                        predScore: "31 - 27 MIA",
+                        homeLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png",
+                        awayLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/228.png",
+                        highlight: "ACC Championship elimination match! High scoring vs elite pass rush."
+                    }
+                ]
+            },
+            basketball: {
+                title: "College Basketball",
+                icon: "fa-basketball",
+                accentColor: "#FF6B00",
+                subTabs: [
+                    { id: "top25", label: "Top 25 Rankings", icon: "fa-list-ol" }
+                ],
+                weeks: {
+                    "Week 3": {
+                        date: "Nov 24, 2026",
+                        teams: [
+                            { rank: 1, name: "Kansas", conf: "Big 12", record: "6-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png", trend: "SAME", change: 0, notes: "Unanimous #1 after winning Feast Week tournament title." },
+                            { rank: 2, name: "Houston", conf: "Big 12", record: "6-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/248.png", trend: "UP", change: 1, notes: "Ascended into top 2 off impressive defensive displays." },
+                            { rank: 3, name: "Duke", conf: "ACC", record: "5-1", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/150.png", trend: "DOWN", change: -1, notes: "Bounced back with major statement win over ranked foe." },
+                            { rank: 4, name: "Alabama", conf: "SEC", record: "5-1", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png", trend: "UP", change: 1, notes: "Offensive horsepower proving tough for anyone to match." },
+                            { rank: 5, name: "UConn", conf: "Big East", record: "5-1", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/41.png", trend: "DOWN", change: -1, notes: "Solid week with dominant conference-opening win." },
+                            { rank: 6, name: "Gonzaga", conf: "WCC", record: "5-1", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2250.png", trend: "UP", change: 1, notes: "Key signature non-conference victory over Big Ten opponent." },
+                            { rank: 7, name: "Iowa State", conf: "Big 12", record: "6-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png", trend: "UP", change: 1, notes: "Continued undefeated streak behind suffocating defense." },
+                            { rank: 8, name: "Purdue", conf: "Big Ten", record: "5-2", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2509.png", trend: "DOWN", change: -2, notes: "Tough battle in Feast Week leads to minor dip." }
+                        ]
+                    },
+                    "Week 2": {
+                        date: "Nov 17, 2026",
+                        teams: [
+                            { rank: 1, name: "Kansas", conf: "Big 12", record: "4-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png", trend: "UP", change: 1, notes: "Claimed #1 spot after marquee win over top-5 opponent." },
+                            { rank: 2, name: "Duke", conf: "ACC", record: "3-1", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/150.png", trend: "DOWN", change: -1, notes: "Slight slip after tight overtime loss on a neutral court." },
+                            { rank: 3, name: "Houston", conf: "Big 12", record: "4-0", logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/248.png", trend: "UP", change: 1, notes: "Held two straight opponents under 50 total points." }
+                        ]
+                    }
+                }
+            }
+        };
+
+        // App State
+        let currentSport = "football";
+        let currentSubTab = "top25";
+        let currentWeek = "Week 8";
+        let activeConfPowerTab = "SEC";
+        let activeChart = null;
+
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initApp();
+
+            document.getElementById("searchInput").addEventListener("input", renderActiveView);
+            document.getElementById("confFilter").addEventListener("change", renderActiveView);
+        });
+
+        function initApp() {
+            renderSubTabs();
+            renderWeekTabs();
+            renderConfPowerTabs();
+            renderActiveView();
+        }
+
+        // Switch between Football and Basketball
+        function switchSport(sport) {
+            currentSport = sport;
+            currentSubTab = "top25"; // Reset to Top 25 default
+            
+            // Set current default week
+            const sportObj = sportsData[sport];
+            currentWeek = Object.keys(sportObj.weeks)[0];
+
+            // Theme UI updates
+            const btnFB = document.getElementById("btnFootball");
+            const btnBB = document.getElementById("btnBasketball");
+            const badgeIcon = document.getElementById("sportBadgeIcon");
+            const sportIcon = document.getElementById("sportIcon");
+            const titleAccent = document.getElementById("sportTitleAccent");
+
+            if (sport === "football") {
+                btnFB.className = "px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-2 bg-brand-fbBlue text-white shadow-md glow-fb";
+                btnBB.className = "px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-2 text-brand-textMuted hover:text-white hover:bg-slate-800";
+                
+                badgeIcon.className = "w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-600 to-blue-400 flex items-center justify-center text-white font-black text-2xl shadow-lg glow-fb transition-all duration-300";
+                sportIcon.className = "fa-solid fa-football";
+                titleAccent.className = "text-brand-fbBlue transition-colors duration-300";
+            } else {
+                btnBB.className = "px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-2 bg-brand-bbOrange text-white shadow-md glow-bb";
+                btnFB.className = "px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-2 text-brand-textMuted hover:text-white hover:bg-slate-800";
+                
+                badgeIcon.className = "w-11 h-11 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-400 flex items-center justify-center text-white font-black text-2xl shadow-lg glow-bb transition-all duration-300";
+                sportIcon.className = "fa-solid fa-basketball";
+                titleAccent.className = "text-brand-bbOrange transition-colors duration-300";
+            }
+
+            renderSubTabs();
+            renderWeekTabs();
+            renderActiveView();
+        }
+
+        // Render Sub-Navigation Tabs based on Sport
+        function renderSubTabs() {
+            const container = document.getElementById("subTabsContainer");
+            const tabs = sportsData[currentSport].subTabs;
+            const accentColor = sportsData[currentSport].accentColor;
+
+            container.innerHTML = "";
+
+            tabs.forEach(tab => {
+                const isActive = tab.id === currentSubTab;
+                const btn = document.createElement("button");
+                
+                btn.className = `px-4 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wider flex items-center gap-2 transition-all ${
+                    isActive 
+                    ? `bg-slate-800 text-white border border-brand-border shadow-md` 
+                    : `text-brand-textMuted hover:text-white hover:bg-slate-800/50`
+                }`;
+                btn.style.borderColor = isActive ? accentColor : "";
+
+                btn.innerHTML = `<i class="fa-solid ${tab.icon}"></i> ${tab.label}`;
+                btn.onclick = () => {
+                    currentSubTab = tab.id;
+                    renderSubTabs();
+                    renderActiveView();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // Render Week Tabs
+        function renderWeekTabs() {
+            const container = document.getElementById("weekTabsContainer");
+            const weeksObj = sportsData[currentSport].weeks;
+            const accent = currentSport === "football" ? "bg-brand-fbBlue glow-fb" : "bg-brand-bbOrange glow-bb";
+
+            container.innerHTML = "";
+
+            Object.keys(weeksObj).forEach(wkKey => {
+                const isActive = wkKey === currentWeek;
+                const btn = document.createElement("button");
+                btn.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    isActive 
+                    ? `${accent} text-white shadow-md` 
+                    : "bg-slate-900 text-brand-textMuted hover:bg-slate-800 hover:text-white"
+                }`;
+                btn.innerText = wkKey;
+                btn.onclick = () => {
+                    currentWeek = wkKey;
+                    renderWeekTabs();
+                    renderTop25Table();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+
+        function renderActiveView() {
+            // Hide all views first
+            document.getElementById("viewTop25").classList.add("hidden");
+            document.getElementById("viewConfPower").classList.add("hidden");
+            document.getElementById("viewTopGames").classList.add("hidden");
+
+            if (currentSubTab === "top25") {
+                document.getElementById("viewTop25").classList.remove("hidden");
+                renderTop25Table();
+            } else if (currentSubTab === "confPower") {
+                document.getElementById("viewConfPower").classList.remove("hidden");
+                renderConfPowerContent();
+            } else if (currentSubTab === "topGames") {
+                document.getElementById("viewTopGames").classList.remove("hidden");
+                renderTopGamesGrid();
+            }
+        }
+
+
+        function renderTop25Table() {
+            const tableBody = document.getElementById("rankingsTableBody");
+            const emptyState = document.getElementById("emptyState");
+            const weekData = sportsData[currentSport].weeks[currentWeek];
+
+            if (!weekData) return;
+
+            document.getElementById("currentWeekTitle").innerText = `${sportsData[currentSport].title} Top 25 - ${currentWeek}`;
+            document.getElementById("currentWeekDate").innerText = `Updated ${weekData.date}`;
+
+            const searchVal = document.getElementById("searchInput").value.toLowerCase().trim();
+            const confVal = document.getElementById("confFilter").value;
+
+            tableBody.innerHTML = "";
+
+            const filteredTeams = weekData.teams.filter(t => {
+                const matchesSearch = t.name.toLowerCase().includes(searchVal) || t.conf.toLowerCase().includes(searchVal);
+                const matchesConf = confVal === "ALL" || t.conf === confVal;
+                return matchesSearch && matchesConf;
+            });
+
+            if (filteredTeams.length === 0) {
+                emptyState.classList.remove("hidden");
+                return;
+            } else {
+                emptyState.classList.add("hidden");
+            }
+
+            const accentText = currentSport === "football" ? "text-brand-fbBlue" : "text-brand-bbOrange";
+
+            filteredTeams.forEach(team => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-800/60 cursor-pointer transition-colors group";
+                tr.onclick = () => openTeamModal(team.name);
+
+                let trendBadge = "";
+                if (team.trend === "UP") {
+                    trendBadge = `<span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20"><i class="fa-solid fa-caret-up"></i> ${team.change}</span>`;
+                } else if (team.trend === "DOWN") {
+                    trendBadge = `<span class="inline-flex items-center gap-1 text-xs font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20"><i class="fa-solid fa-caret-down"></i> ${Math.abs(team.change)}</span>`;
+                } else {
+                    trendBadge = `<span class="inline-flex items-center text-xs font-bold text-slate-400 bg-slate-500/10 px-2 py-0.5 rounded border border-slate-500/20">-</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-center font-black text-base ${accentText}">#${team.rank}</td>
+                    <td class="py-3 px-4 text-center">
+                        <img src="${team.logo}" alt="${team.name}" class="w-8 h-8 object-contain mx-auto group-hover:scale-110 transition-transform" onerror="this.src='https://placehold.co/40x40/151C2C/FFFFFF?text=CBB'">
+                    </td>
+                    <td class="py-3 px-4 font-bold text-white group-hover:text-sky-400 transition-colors">${team.name}</td>
+                    <td class="py-3 px-4 text-xs text-brand-textMuted hidden sm:table-cell font-medium">${team.conf}</td>
+                    <td class="py-3 px-4 text-center font-mono text-xs text-slate-300">${team.record}</td>
+                    <td class="py-3 px-4 text-center">${trendBadge}</td>
+                    <td class="py-3 px-4 text-xs text-slate-300 truncate max-w-xs hidden md:table-cell">${team.notes}</td>
+                    <td class="py-3 px-4 text-center text-brand-textMuted group-hover:text-white"><i class="fa-solid fa-chevron-right text-xs"></i></td>
+                `;
+
+                tableBody.appendChild(tr);
+            });
+        }
+
+
+        function renderConfPowerTabs() {
+            const container = document.getElementById("confPowerTabs");
+            if (!container) return;
+            
+            const confs = ["SEC", "Big Ten", "Big 12", "ACC"];
+            container.innerHTML = "";
+
+            confs.forEach(conf => {
+                const isActive = conf === activeConfPowerTab;
+                const btn = document.createElement("button");
+                btn.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    isActive 
+                    ? "bg-brand-fbBlue text-white shadow-md glow-fb" 
+                    : "bg-slate-900 text-brand-textMuted hover:bg-slate-800 hover:text-white"
+                }`;
+                btn.innerText = conf;
+                btn.onclick = () => {
+                    activeConfPowerTab = conf;
+                    renderConfPowerTabs();
+                    renderConfPowerContent();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderConfPowerContent() {
+            const container = document.getElementById("confPowerContent");
+            if (!container) return;
+
+            const teams = sportsData.football.confPower[activeConfPowerTab] || [];
+            container.innerHTML = "";
+
+            teams.forEach(t => {
+                const card = document.createElement("div");
+                card.className = "bg-slate-900/60 p-4 rounded-xl border border-brand-border flex items-start gap-4 hover:border-brand-fbBlue/50 transition-all";
+                card.innerHTML = `
+                    <div class="w-9 h-9 rounded-lg bg-brand-fbBlue/20 text-brand-fbBlue font-black flex items-center justify-center text-lg shrink-0">
+                        #${t.rank}
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h4 class="font-extrabold text-white text-base">${t.name}</h4>
+                            <span class="text-xs font-mono text-brand-textMuted">(${t.record})</span>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">${t.note}</p>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+
+        function renderTopGamesGrid() {
+            const container = document.getElementById("gamesGrid");
+            if (!container) return;
+
+            const games = sportsData.football.games;
+            container.innerHTML = "";
+
+            games.forEach((g, idx) => {
+                const card = document.createElement("div");
+                card.className = "bg-brand-cardBg p-5 rounded-2xl border border-brand-border space-y-4 shadow-lg hover:border-brand-fbBlue transition-all relative overflow-hidden";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-brand-border pb-3">
+                        <span class="text-xs font-extrabold px-2.5 py-1 rounded bg-red-600/20 text-red-400 border border-red-500/30 flex items-center gap-1.5">
+                            <i class="fa-solid fa-tv"></i> ${g.tv}
+                        </span>
+                        <span class="text-xs text-brand-textMuted font-medium"><i class="fa-regular fa-clock mr-1"></i> ${g.date}</span>
+                    </div>
+
+                    <!-- Teams Matchup Logos -->
+                    <div class="flex items-center justify-between px-2">
+                        <div class="text-center space-y-1">
+                            <img src="${g.homeLogo}" alt="" class="w-12 h-12 object-contain mx-auto">
+                            <span class="text-xs font-bold text-white block">Home</span>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-2xl font-black text-brand-fbBlue font-teko tracking-wider">VS</span>
+                            <span class="text-xs text-brand-textMuted block font-mono">${g.spread}</span>
+                        </div>
+                        <div class="text-center space-y-1">
+                            <img src="${g.awayLogo}" alt="" class="w-12 h-12 object-contain mx-auto">
+                            <span class="text-xs font-bold text-white block">Away</span>
+                        </div>
+                    </div>
+
+                    <!-- Prediction Banner -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-brand-border/60 text-xs space-y-1">
+                        <div class="flex justify-between items-center font-bold">
+                            <span class="text-brand-textMuted">Projected Score:</span>
+                            <span class="text-emerald-400 font-mono">${g.predScore}</span>
+                        </div>
+                        <p class="text-slate-300 italic pt-1 border-t border-brand-border/40 text-[11px] leading-snug">"${g.highlight}"</p>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+
+        function openTeamModal(teamName) {
+            const modal = document.getElementById("teamModal");
+            const currentWeekData = sportsData[currentSport].weeks[currentWeek].teams.find(t => t.name === teamName);
+
+            if (!currentWeekData) return;
+
+            const isFB = currentSport === "football";
+            const accent = isFB ? "#0284C7" : "#FF6B00";
+
+            document.getElementById("modalLogo").src = currentWeekData.logo;
+            document.getElementById("modalRank").innerText = `#${currentWeekData.rank}`;
+            document.getElementById("modalRank").style.backgroundColor = accent;
+            document.getElementById("modalConf").innerText = currentWeekData.conf;
+            document.getElementById("modalTeamName").innerText = currentWeekData.name;
+            document.getElementById("modalRecord").innerText = `Record: ${currentWeekData.record}`;
+            document.getElementById("modalRationale").innerText = currentWeekData.notes;
+
+            document.getElementById("modalChartIcon").style.color = accent;
+            document.getElementById("modalQuoteIcon").style.color = accent;
+
+            // Gather history points
+            const weekKeys = Object.keys(sportsData[currentSport].weeks);
+            const historyRanks = [];
+            let highestRank = currentWeekData.rank;
+
+            weekKeys.forEach(wk => {
+                const teamInWk = sportsData[currentSport].weeks[wk].teams.find(t => t.name === teamName);
+                if (teamInWk) {
+                    historyRanks.push(teamInWk.rank);
+                    if (teamInWk.rank < highestRank) highestRank = teamInWk.rank;
+                } else {
+                    historyRanks.push(null);
+                }
+            });
+
+            document.getElementById("modalHighRank").innerText = `#${highestRank}`;
+            document.getElementById("modalTrendBadge").innerText = currentWeekData.trend === "SAME" ? "Unchanged" : `${currentWeekData.trend} (${currentWeekData.change > 0 ? '+' : ''}${currentWeekData.change})`;
+
+            modal.classList.remove("hidden");
+
+            renderRankChart(weekKeys, historyRanks, accent);
+        }
+
+        function renderRankChart(labels, ranksData, accentColor) {
+            const ctx = document.getElementById("rankChart").getContext("2d");
+
+            if (activeChart) {
+                activeChart.destroy();
+            }
+
+            activeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Rank',
+                        data: ranksData,
+                        borderColor: accentColor,
+                        backgroundColor: `${accentColor}25`,
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: accentColor,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            reverse: true,
+                            min: 1,
+                            max: 15,
+                            ticks: { color: '#94A3B8', stepSize: 1, callback: v => `#${v}` },
+                            grid: { color: 'rgba(42, 54, 79, 0.4)' }
+                        },
+                        x: {
+                            ticks: { color: '#94A3B8' },
+                            grid: { color: 'rgba(42, 54, 79, 0.4)' }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function closeModal() {
+            document.getElementById("teamModal").classList.add("hidden");
+        }
+
+        function shareSummary() {
+            const currentTeams = sportsData[currentSport].weeks[currentWeek].teams.slice(0, 5);
+            let summary = `🏆 ${sportsData[currentSport].title.toUpperCase()} TOP 5 (${currentWeek.toUpperCase()}) 🏆\n\n`;
+            
+            currentTeams.forEach(t => {
+                summary += `#${t.rank} ${t.name} (${t.record})\n`;
+            });
+            summary += `\nCheck out full rankings on College Sports Central!`;
+
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = summary;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            showToast("Top 5 summary copied to clipboard!");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById("toast");
+            document.getElementById("toastMessage").innerText = msg;
+            toast.classList.remove("translate-y-20", "opacity-0");
+            setTimeout(() => {
+                toast.classList.add("translate-y-20", "opacity-0");
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
